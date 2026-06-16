@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UrbanSpark Logistics GmbH — E-Bike Parts Distribution</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap');
+
+:root {
+  --bg:       #0f0f0f;
+  --surface:  #171717;
+  --surface2: #1e1e1e;
+  --border:   #2a2a2a;
+  --border2:  #333;
+  --text:     #e8e8e8;
+  --muted:    #666;
+  --muted2:   #999;
+  --accent:   #c8f04a;
+  --accent2:  #a8d032;
+  --mono:     'DM Mono', monospace;
+  --sans:     'DM Sans', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(15,15,15,0.88);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 3rem; height: 56px;
+}
+.nav-logo {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--mono); font-size: 13px; font-weight: 500;
+  color: var(--text); text-decoration: none; letter-spacing: 0.04em;
+}
+.nav-logo-mark {
+  width: 28px; height: 28px; border-radius: 6px;
+  background: var(--accent); display: flex; align-items: center;
+  justify-content: center;
+}
+.nav-logo-mark svg { width: 16px; height: 16px; }
+.nav-links { display: flex; gap: 0; }
+.nav-links a {
+  color: var(--muted2); text-decoration: none; font-size: 13px;
+  padding: 0 1.1rem; height: 56px; display: flex; align-items: center;
+  transition: color 0.15s; border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.nav-links a:hover { color: var(--text); }
+.nav-cta {
+  background: var(--accent); color: #0f0f0f !important;
+  font-weight: 600; border-radius: 6px; padding: 0 1.2rem !important;
+  height: 34px !important; margin: auto 0;
+  display: flex !important; align-items: center !important;
+}
+.nav-cta:hover { background: var(--accent2) !important; }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 0 3rem 5rem;
+  position: relative; overflow: hidden;
+}
+.hero-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, rgba(15,15,15,0.2) 0%, rgba(15,15,15,0.7) 60%, rgba(15,15,15,1) 100%);
+  z-index: 1;
+}
+.hero-img {
+  position: absolute; inset: 0;
+  object-fit: cover; width: 100%; height: 100%;
+  filter: grayscale(30%) brightness(0.55);
+}
+.hero-content { position: relative; z-index: 2; max-width: 760px; }
+.hero-eyebrow {
+  font-family: var(--mono); font-size: 11px; color: var(--accent);
+  letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 1.5rem;
+  display: flex; align-items: center; gap: 10px;
+}
+.hero-eyebrow::before {
+  content: ''; display: block; width: 32px; height: 1px; background: var(--accent);
+}
+.hero h1 {
+  font-size: clamp(2.6rem, 6vw, 4.5rem);
+  font-weight: 300; line-height: 1.08; letter-spacing: -0.025em;
+  margin-bottom: 1.5rem;
+}
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero-sub {
+  font-size: 16px; color: var(--muted2); max-width: 520px;
+  margin-bottom: 2.5rem; line-height: 1.75;
+}
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn-primary {
+  background: var(--accent); color: #0f0f0f;
+  font-family: var(--sans); font-size: 14px; font-weight: 600;
+  padding: 0.75rem 1.75rem; border-radius: 6px; border: none;
+  cursor: pointer; text-decoration: none; transition: background 0.15s;
+}
+.btn-primary:hover { background: var(--accent2); }
+.btn-ghost {
+  background: transparent; color: var(--text);
+  font-family: var(--sans); font-size: 14px; font-weight: 400;
+  padding: 0.75rem 1.75rem; border-radius: 6px;
+  border: 1px solid var(--border2); cursor: pointer;
+  text-decoration: none; transition: border-color 0.15s;
+}
+.btn-ghost:hover { border-color: var(--muted2); }
+
+/* ── TICKER ── */
+.ticker {
+  background: var(--accent); padding: 10px 0; overflow: hidden;
+  white-space: nowrap;
+}
+.ticker-inner {
+  display: inline-flex; gap: 0;
+  animation: ticker 30s linear infinite;
+}
+.ticker-item {
+  font-family: var(--mono); font-size: 12px; font-weight: 500;
+  color: #0f0f0f; padding: 0 2.5rem;
+  display: flex; align-items: center; gap: 1rem;
+}
+.ticker-item::after { content: '·'; opacity: 0.4; }
+@keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* ── SECTIONS ── */
+section { padding: 6rem 3rem; }
+.section-inner { max-width: 1040px; margin: 0 auto; }
+.section-eyebrow {
+  font-family: var(--mono); font-size: 11px; color: var(--accent);
+  letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 1rem;
+}
+.section-title {
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  font-weight: 300; letter-spacing: -0.02em; line-height: 1.15;
+  margin-bottom: 1.25rem;
+}
+.section-body { color: var(--muted2); max-width: 560px; line-height: 1.8; }
+
+/* ── NUMBERS ── */
+.numbers { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.numbers-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+.number-cell {
+  padding: 3rem 2.5rem;
+  border-right: 1px solid var(--border);
+}
+.number-cell:last-child { border-right: none; }
+.number-val {
+  font-size: 3rem; font-weight: 300; line-height: 1;
+  letter-spacing: -0.03em; margin-bottom: 0.5rem;
+  color: var(--accent);
+}
+.number-unit { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-bottom: 0.5rem; }
+.number-desc { font-size: 13px; color: var(--muted2); }
+
+/* ── OFFER GRID ── */
+.offer-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: var(--border);
+  border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+  margin-top: 3.5rem;
+}
+.offer-card {
+  background: var(--surface); padding: 2rem 2.5rem;
+}
+.offer-icon {
+  width: 40px; height: 40px; border-radius: 8px;
+  background: rgba(200,240,74,0.1); border: 1px solid rgba(200,240,74,0.2);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 1.25rem;
+}
+.offer-icon svg { width: 20px; height: 20px; stroke: var(--accent); fill: none; stroke-width: 1.5; }
+.offer-title { font-size: 15px; font-weight: 500; margin-bottom: 0.6rem; }
+.offer-body { font-size: 13px; color: var(--muted2); line-height: 1.75; }
+
+/* ── ZONES ── */
+.zones { background: var(--surface); }
+.zones-layout {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 4rem; align-items: center;
+  margin-top: 3rem;
+}
+.zone-img {
+  border-radius: 12px; overflow: hidden;
+  aspect-ratio: 4/3;
+}
+.zone-img img {
+  width: 100%; height: 100%; object-fit: cover;
+  filter: grayscale(20%) brightness(0.8);
+  transition: filter 0.3s;
+}
+.zone-img:hover img { filter: grayscale(0%) brightness(0.9); }
+.zone-list { display: flex; flex-direction: column; gap: 0; }
+.zone-item {
+  display: flex; align-items: flex-start; gap: 1.25rem;
+  padding: 1.25rem 0; border-bottom: 1px solid var(--border);
+}
+.zone-item:last-child { border-bottom: none; }
+.zone-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent); margin-top: 6px; flex-shrink: 0;
+}
+.zone-name { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+.zone-detail { font-size: 12px; color: var(--muted2); font-family: var(--mono); }
+
+/* ── BRANDS ── */
+.brands-row {
+  display: flex; align-items: center; gap: 0; flex-wrap: wrap;
+  border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+  margin-top: 3rem;
+}
+.brand-cell {
+  flex: 1; min-width: 120px; padding: 1.75rem 2rem;
+  border-right: 1px solid var(--border); text-align: center;
+  font-family: var(--mono); font-size: 13px; font-weight: 500;
+  color: var(--muted); letter-spacing: 0.06em;
+  transition: color 0.2s, background 0.2s;
+}
+.brand-cell:last-child { border-right: none; }
+.brand-cell:hover { color: var(--text); background: var(--surface2); }
+
+/* ── PRODUCTS ── */
+.products-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 12px; margin-top: 3rem;
+}
+.product-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+  transition: border-color 0.2s;
+}
+.product-card:hover { border-color: var(--border2); }
+.product-img { aspect-ratio: 16/9; overflow: hidden; }
+.product-img img {
+  width: 100%; height: 100%; object-fit: cover;
+  filter: grayscale(15%) brightness(0.75);
+  transition: filter 0.3s, transform 0.4s;
+}
+.product-card:hover .product-img img {
+  filter: grayscale(0%) brightness(0.9);
+  transform: scale(1.03);
+}
+.product-body { padding: 1.25rem 1.5rem; }
+.product-tag {
+  font-family: var(--mono); font-size: 10px; color: var(--accent);
+  letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.4rem;
+}
+.product-name { font-size: 14px; font-weight: 500; margin-bottom: 0.4rem; }
+.product-desc { font-size: 12px; color: var(--muted2); }
+
+/* ── CTA BAND ── */
+.cta-band {
+  background: var(--accent); padding: 5rem 3rem;
+}
+.cta-inner {
+  max-width: 1040px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between; gap: 2rem;
+}
+.cta-text h2 {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 400; color: #0f0f0f; letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+.cta-text p { font-size: 14px; color: rgba(0,0,0,0.6); }
+.btn-dark {
+  background: #0f0f0f; color: var(--accent);
+  font-family: var(--sans); font-size: 14px; font-weight: 600;
+  padding: 0.85rem 2rem; border-radius: 6px; border: none;
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+  transition: background 0.15s;
+}
+.btn-dark:hover { background: #1e1e1e; }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--surface); border-top: 1px solid var(--border);
+  padding: 3rem; 
+}
+.footer-inner {
+  max-width: 1040px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 2rem; flex-wrap: wrap;
+}
+.footer-brand {
+  font-family: var(--mono); font-size: 12px; color: var(--muted);
+  max-width: 260px; line-height: 1.7;
+}
+.footer-brand strong { color: var(--text); display: block; margin-bottom: 0.5rem; font-size: 13px; }
+.footer-cols { display: flex; gap: 3rem; }
+.footer-col h4 { font-size: 11px; font-family: var(--mono); color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.75rem; }
+.footer-col a { display: block; color: var(--muted2); text-decoration: none; font-size: 13px; margin-bottom: 0.4rem; transition: color 0.15s; }
+.footer-col a:hover { color: var(--text); }
+.footer-bottom {
+  max-width: 1040px; margin: 2rem auto 0;
+  padding-top: 1.5rem; border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between;
+  font-size: 11px; color: var(--muted); font-family: var(--mono);
+}
+.disclaimer {
+  font-size: 11px; color: var(--muted); font-family: var(--mono);
+  margin-top: 0.5rem; opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+  nav { padding: 0 1.5rem; }
+  .nav-links a:not(.nav-cta) { display: none; }
+  .hero { padding: 0 1.5rem 3rem; }
+  section { padding: 4rem 1.5rem; }
+  .numbers-grid { grid-template-columns: 1fr 1fr; }
+  .number-cell { border-bottom: 1px solid var(--border); }
+  .offer-grid { grid-template-columns: 1fr; }
+  .zones-layout { grid-template-columns: 1fr; }
+  .products-grid { grid-template-columns: 1fr; }
+  .cta-inner { flex-direction: column; }
+  .footer-inner { flex-direction: column; }
+  .footer-cols { flex-wrap: wrap; gap: 2rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-mark">
+      <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="8" cy="8" r="6" stroke="#0f0f0f" stroke-width="1.5"/>
+        <path d="M5 8h6M8 5v6" stroke="#0f0f0f" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    UrbanSpark Logistics
+  </a>
+  <div class="nav-links">
+    <a href="#offer">What we do</a>
+    <a href="#zones">Coverage</a>
+    <a href="#products">Catalogue</a>
+    <a href="#contact" class="nav-cta">Contact us</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" style="padding:0 3rem 5rem">
+  <img class="hero-img"
+    src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1600&q=80&auto=format&fit=crop"
+    alt="E-bike in urban setting">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <p class="hero-eyebrow">B2B E-Bike Parts Distribution · Munich</p>
+    <h1>The parts your<br>customers need.<br><em>When they need them.</em></h1>
+    <p class="hero-sub">UrbanSpark Logistics is the dedicated wholesale distributor for premium e-bike components across Southern Germany — serving independent dealers, workshop chains and fleet operators.</p>
+    <div class="hero-actions">
+      <a href="#offer" class="btn-primary">Explore our offer</a>
+      <a href="#contact" class="btn-ghost">Request a catalogue</a>
+    </div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-inner">
+    <span class="ticker-item">Bosch Performance Line</span>
+    <span class="ticker-item">Shimano STEPS</span>
+    <span class="ticker-item">SRAM Eagle AXS</span>
+    <span class="ticker-item">Schwalbe Tyres</span>
+    <span class="ticker-item">RockShox Suspension</span>
+    <span class="ticker-item">Magura Brakes</span>
+    <span class="ticker-item">Mavic Wheels</span>
+    <span class="ticker-item">Fox Racing Shox</span>
+    <span class="ticker-item">Lupine Lighting</span>
+    <span class="ticker-item">Abus Security</span>
+    <span class="ticker-item">Bosch Performance Line</span>
+    <span class="ticker-item">Shimano STEPS</span>
+    <span class="ticker-item">SRAM Eagle AXS</span>
+    <span class="ticker-item">Schwalbe Tyres</span>
+    <span class="ticker-item">RockShox Suspension</span>
+    <span class="ticker-item">Magura Brakes</span>
+    <span class="ticker-item">Mavic Wheels</span>
+    <span class="ticker-item">Fox Racing Shox</span>
+    <span class="ticker-item">Lupine Lighting</span>
+    <span class="ticker-item">Abus Security</span>
+  </div>
+</div>
+
+<!-- NUMBERS -->
+<section class="numbers" style="padding: 0">
+  <div class="section-inner" style="max-width:100%">
+    <div class="numbers-grid">
+      <div class="number-cell">
+        <div class="number-val">38</div>
+        <div class="number-unit">active SKUs</div>
+        <div class="number-desc">Premium e-bike components across 6 categories</div>
+      </div>
+      <div class="number-cell">
+        <div class="number-val">47</div>
+        <div class="number-unit">dealer partners</div>
+        <div class="number-desc">Independent shops and workshop chains across Bavaria</div>
+      </div>
+      <div class="number-cell">
+        <div class="number-val">5</div>
+        <div class="number-unit">delivery zones</div>
+        <div class="number-desc">Munich, Stuttgart, Nuremberg, Frankfurt, Augsburg</div>
+      </div>
+      <div class="number-cell">
+        <div class="number-val">98%</div>
+        <div class="number-unit">fill rate target</div>
+        <div class="number-desc">For A-tier components — never let a key part go missing</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT WE DO -->
+<section id="offer">
+  <div class="section-inner">
+    <p class="section-eyebrow">What we do</p>
+    <h2 class="section-title">More than a warehouse.<br>A supply chain partner.</h2>
+    <p class="section-body">We handle the complexity of sourcing, stocking and delivering premium e-bike components so your team can focus on what matters — selling, servicing and growing.</p>
+    <div class="offer-grid">
+      <div class="offer-card">
+        <div class="offer-icon">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <div class="offer-title">Centralised Munich stock</div>
+        <div class="offer-body">All 38 SKUs held at our Munich warehouse. No drop-shipping, no delays — stock is ready for same-week dispatch across all zones.</div>
+      </div>
+      <div class="offer-card">
+        <div class="offer-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="offer-title">Scheduled weekly delivery</div>
+        <div class="offer-body">Fixed delivery windows per zone — Munich 3x/week with own fleet, regional zones via DPD 3PL. Reliable, predictable, trackable.</div>
+      </div>
+      <div class="offer-card">
+        <div class="offer-icon">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div class="offer-title">Transparent ordering</div>
+        <div class="offer-body">Simple B2B ordering with live stock visibility, order history and automatic reorder suggestions based on your sales cadence.</div>
+      </div>
+      <div class="offer-card">
+        <div class="offer-icon">
+          <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="offer-title">Quality-assured sourcing</div>
+        <div class="offer-body">Direct supply agreements with Bosch, Shimano, SRAM, Fox, Schwalbe and 6 other tier-1 brands. Genuine parts, full warranty.</div>
+      </div>
+      <div class="offer-card">
+        <div class="offer-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <div class="offer-title">Regional coverage</div>
+        <div class="offer-body">Five delivery zones covering Munich, Stuttgart, Nuremberg, Frankfurt and Augsburg — with express dispatch for urgent requirements.</div>
+      </div>
+      <div class="offer-card">
+        <div class="offer-icon">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <div class="offer-title">Dedicated account management</div>
+        <div class="offer-body">A single point of contact for every dealer partner. From onboarding to ongoing forecasting — we keep your supply chain running smoothly.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ZONES -->
+<section id="zones" class="zones">
+  <div class="section-inner">
+    <p class="section-eyebrow">Coverage</p>
+    <h2 class="section-title">Serving Southern Germany,<br>zone by zone.</h2>
+    <div class="zones-layout">
+      <div class="zone-img">
+        <img src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&q=80&auto=format&fit=crop"
+          alt="Munich city aerial view">
+      </div>
+      <div class="zone-list">
+        <div class="zone-item">
+          <div class="zone-dot"></div>
+          <div>
+            <div class="zone-name">Munich (MUC) — HQ Zone</div>
+            <div class="zone-detail">Own Sprinter fleet · 3x/week · 15 dealer partners</div>
+          </div>
+        </div>
+        <div class="zone-item">
+          <div class="zone-dot" style="background:var(--muted2)"></div>
+          <div>
+            <div class="zone-name">Stuttgart (STR)</div>
+            <div class="zone-detail">DPD 3PL · 1x/week · 9 dealer partners</div>
+          </div>
+        </div>
+        <div class="zone-item">
+          <div class="zone-dot" style="background:var(--muted2)"></div>
+          <div>
+            <div class="zone-name">Nuremberg (NUE)</div>
+            <div class="zone-detail">DPD 3PL · 1x/week · 8 dealer partners</div>
+          </div>
+        </div>
+        <div class="zone-item">
+          <div class="zone-dot" style="background:var(--muted2)"></div>
+          <div>
+            <div class="zone-name">Frankfurt (FRA)</div>
+            <div class="zone-detail">DPD 3PL · 1x/week · 8 dealer partners</div>
+          </div>
+        </div>
+        <div class="zone-item">
+          <div class="zone-dot" style="background:var(--muted2)"></div>
+          <div>
+            <div class="zone-name">Augsburg (AUG)</div>
+            <div class="zone-detail">DPD 3PL · 2x/week · 7 dealer partners</div>
+          </div>
+        </div>
+        <div class="zone-item">
+          <div class="zone-dot" style="background:var(--red)"></div>
+          <div>
+            <div class="zone-name">Express (all zones)</div>
+            <div class="zone-detail">Urgent dispatch · DPD Express parcel + car courier MUC</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BRANDS -->
+<section style="padding: 4rem 3rem">
+  <div class="section-inner">
+    <p class="section-eyebrow" style="text-align:center;margin-bottom:2rem">Our supplier partners</p>
+    <div class="brands-row">
+      <div class="brand-cell">BOSCH</div>
+      <div class="brand-cell">SHIMANO</div>
+      <div class="brand-cell">SRAM</div>
+      <div class="brand-cell">SCHWALBE</div>
+      <div class="brand-cell">ROCKSHOX</div>
+      <div class="brand-cell">MAGURA</div>
+      <div class="brand-cell">MAVIC</div>
+      <div class="brand-cell">ABUS</div>
+    </div>
+  </div>
+</section>
+
+<!-- PRODUCTS -->
+<section id="products" style="padding-top:2rem">
+  <div class="section-inner">
+    <p class="section-eyebrow">Catalogue highlights</p>
+    <h2 class="section-title">The components that<br>keep e-bikes moving.</h2>
+    <div class="products-grid">
+      <div class="product-card">
+        <div class="product-img">
+          <img src="https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=600&q=80&auto=format&fit=crop"
+            alt="E-bike motor drive unit">
+        </div>
+        <div class="product-body">
+          <div class="product-tag">Drivetrain & Motors</div>
+          <div class="product-name">Drive systems & groupsets</div>
+          <div class="product-desc">Bosch Performance Line CX, Shimano STEPS E8000, SRAM Eagle cassettes and Shimano Deore derailleurs.</div>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-img">
+          <img src="https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?w=600&q=80&auto=format&fit=crop"
+            alt="Bicycle wheel close up">
+        </div>
+        <div class="product-body">
+          <div class="product-tag">Wheels & Tyres</div>
+          <div class="product-name">Wheelsets & rubber</div>
+          <div class="product-desc">Mavic E-XA Elite rims, DT Swiss XR 1501 wheels, Schwalbe Smart Sam and Marathon Plus tyres.</div>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-img">
+          <img src="https://images.unsplash.com/photo-1517649763962-0c623066013b?w=600&q=80&auto=format&fit=crop"
+            alt="Cycling components close up">
+        </div>
+        <div class="product-body">
+          <div class="product-tag">Brakes & Suspension</div>
+          <div class="product-name">Stopping power & ride control</div>
+          <div class="product-desc">Magura MT5 hydraulics, Tektro HD-M290 disc brakes, RockShox Recon RL forks, Fox Rhythm 34 suspension.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA BAND -->
+<section id="contact" style="padding:0">
+  <div class="cta-band">
+    <div class="cta-inner">
+      <div class="cta-text">
+        <h2>Ready to simplify your parts supply?</h2>
+        <p>Contact our B2B team and we'll set up your dealer account within 48 hours.</p>
+      </div>
+      <a href="mailto:b2b@urbanspark-logistics.de" class="btn-dark">Get in touch →</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <strong>UrbanSpark Logistics GmbH</strong>
+      Lagerstraße 14<br>
+      80992 München<br>
+      b2b@urbanspark-logistics.de<br>
+      +49 89 4521 8800
+      <div class="disclaimer">⚠ Fictional company created for a supply chain portfolio project.</div>
+    </div>
+    <div class="footer-cols">
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="#">About us</a>
+        <a href="#">Careers</a>
+        <a href="#">Sustainability</a>
+        <a href="#">Press</a>
+      </div>
+      <div class="footer-col">
+        <h4>Dealers</h4>
+        <a href="#">Become a partner</a>
+        <a href="#">Order portal</a>
+        <a href="#">Catalogue</a>
+        <a href="#">Returns</a>
+      </div>
+      <div class="footer-col">
+        <h4>Zones</h4>
+        <a href="#">Munich</a>
+        <a href="#">Stuttgart</a>
+        <a href="#">Nuremberg</a>
+        <a href="#">Frankfurt</a>
+        <a href="#">Augsburg</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2024 UrbanSpark Logistics GmbH — Fictional entity, educational project</span>
+    <span>Built as part of a supply chain optimisation portfolio</span>
+  </div>
+</footer>
+
+</body>
+</html>
