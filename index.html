@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UrbanSpark Logistics — Supply Chain Analysis</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap');
+
+  :root {
+    --bg:        #0f0f0f;
+    --surface:   #171717;
+    --surface2:  #1e1e1e;
+    --border:    #2a2a2a;
+    --border2:   #333;
+    --text:      #e8e8e8;
+    --muted:     #666;
+    --muted2:    #888;
+    --accent:    #c8f04a;
+    --accent2:   #a8d032;
+    --red:       #f05252;
+    --amber:     #f0a832;
+    --blue:      #4ab4f0;
+    --mono:      'DM Mono', monospace;
+    --sans:      'DM Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(15,15,15,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2rem; height: 52px;
+  }
+  .nav-brand {
+    font-family: var(--mono); font-size: 12px; font-weight: 500;
+    color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .nav-links { display: flex; gap: 0; }
+  .nav-links button {
+    background: none; border: none; color: var(--muted2); cursor: pointer;
+    font-family: var(--sans); font-size: 13px; padding: 0 1rem; height: 52px;
+    transition: color 0.15s; border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .nav-links button:hover { color: var(--text); }
+  .nav-links button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── LAYOUT ── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── HERO ── */
+  .hero {
+    padding: 5rem 2rem 3rem;
+    max-width: 960px; margin: 0 auto;
+  }
+  .hero-eyebrow {
+    font-family: var(--mono); font-size: 11px; color: var(--accent);
+    letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 1.2rem;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.4rem);
+    font-weight: 300; line-height: 1.12;
+    letter-spacing: -0.02em; color: var(--text);
+    margin-bottom: 1rem;
+  }
+  .hero h1 strong { font-weight: 600; color: var(--accent); }
+  .hero-sub {
+    color: var(--muted2); font-size: 15px; max-width: 520px; margin-bottom: 3rem;
+  }
+
+  /* ── SAVINGS STRIP ── */
+  .savings-strip {
+    display: grid; grid-template-columns: repeat(3,1fr); gap: 1px;
+    background: var(--border); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden; margin-bottom: 4rem;
+  }
+  .saving-cell {
+    background: var(--surface); padding: 1.5rem 1.75rem;
+  }
+  .saving-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.5rem; }
+  .saving-value { font-size: 2rem; font-weight: 600; color: var(--accent); line-height: 1; margin-bottom: 0.3rem; }
+  .saving-desc { font-size: 12px; color: var(--muted2); }
+
+  /* ── SECTION ── */
+  .section { max-width: 960px; margin: 0 auto; padding: 0 2rem 4rem; }
+  .section-header { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+  .section-num { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+  .section-title { font-size: 18px; font-weight: 500; }
+  .section-sub { font-size: 13px; color: var(--muted2); margin-left: auto; }
+
+  /* ── KPI GRID ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 2.5rem; }
+  .kpi-card { background: var(--surface); padding: 1.25rem 1.5rem; }
+  .kpi-name { font-size: 11px; color: var(--muted); margin-bottom: 0.75rem; line-height: 1.4; min-height: 2.4em; }
+  .kpi-row { display: flex; align-items: baseline; gap: 0.6rem; margin-bottom: 0.3rem; }
+  .kpi-asis { font-size: 17px; font-weight: 500; color: var(--muted2); }
+  .kpi-arrow { font-size: 12px; color: var(--muted); }
+  .kpi-tobe { font-size: 17px; font-weight: 600; color: var(--text); }
+  .kpi-delta { font-family: var(--mono); font-size: 11px; }
+  .kpi-delta.pos { color: var(--accent); }
+  .kpi-delta.neg { color: var(--red); }
+  .kpi-unit { font-size: 10px; color: var(--muted); margin-top: 0.2rem; }
+
+  /* ── CHART CARD ── */
+  .chart-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem;
+  }
+  .chart-title { font-size: 13px; font-weight: 500; margin-bottom: 0.25rem; }
+  .chart-desc { font-size: 11px; color: var(--muted2); margin-bottom: 1.25rem; }
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* ── ROUTE CARDS ── */
+  .route-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 12px; margin-bottom: 2rem; }
+  .route-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.25rem; cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .route-card:hover { border-color: var(--border2); }
+  .route-card.selected { border-color: var(--accent); }
+  .route-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+  .route-id { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+  .route-name { font-size: 13px; font-weight: 500; margin-top: 2px; }
+  .route-badge {
+    font-family: var(--mono); font-size: 10px; padding: 2px 8px;
+    border-radius: 20px; border: 1px solid;
+  }
+  .badge-fleet { color: var(--blue); border-color: var(--blue); opacity: 0.7; }
+  .badge-dpd { color: var(--amber); border-color: var(--amber); opacity: 0.7; }
+  .route-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .route-metric { background: var(--surface2); border-radius: 6px; padding: 0.6rem 0.75rem; }
+  .rm-label { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
+  .rm-asis { font-size: 12px; color: var(--muted2); }
+  .rm-tobe { font-size: 14px; font-weight: 500; }
+  .rm-delta { font-family: var(--mono); font-size: 10px; }
+  .delta-pos { color: var(--accent); }
+  .delta-neg { color: var(--red); }
+
+  /* ── INV TABLE ── */
+  .inv-controls { display: flex; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .inv-controls select, .inv-controls input {
+    background: var(--surface); border: 1px solid var(--border2);
+    color: var(--text); border-radius: 6px; padding: 6px 10px;
+    font-family: var(--sans); font-size: 13px; outline: none;
+  }
+  .inv-controls input { flex: 1; min-width: 160px; }
+  .inv-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead { background: var(--surface2); }
+  th { padding: 10px 14px; text-align: left; font-weight: 500; font-size: 11px; color: var(--muted2); border-bottom: 1px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; }
+  th:hover { color: var(--text); }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  .abc-badge {
+    font-family: var(--mono); font-size: 10px; padding: 2px 6px;
+    border-radius: 4px; font-weight: 500;
+  }
+  .tier-A { background: rgba(200,240,74,0.12); color: var(--accent); }
+  .tier-B { background: rgba(74,180,240,0.12); color: var(--blue); }
+  .tier-C { background: rgba(102,102,102,0.2); color: var(--muted2); }
+  .mono { font-family: var(--mono); }
+
+  /* ── SIMULATION ── */
+  .sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; }
+  .sim-stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; }
+  .sim-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.5rem; }
+  .sim-val { font-size: 2.2rem; font-weight: 600; line-height: 1; margin-bottom: 0.25rem; }
+  .sim-sub { font-size: 12px; color: var(--muted2); }
+
+  @media (max-width: 640px) {
+    .savings-strip { grid-template-columns: 1fr; }
+    .sim-grid { grid-template-columns: 1fr; }
+    nav { padding: 0 1rem; }
+    .hero { padding: 3rem 1rem 2rem; }
+    .section { padding: 0 1rem 3rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-brand">UrbanSpark // SC Analysis</span>
+  <div class="nav-links">
+    <button class="active" onclick="showPage('overview',this)">Overview</button>
+    <button onclick="showPage('routes',this)">Routes</button>
+    <button onclick="showPage('inventory',this)">Inventory</button>
+    <button onclick="showPage('simulation',this)">Simulation</button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════ OVERVIEW ═══════════════════════════════ -->
+<div id="page-overview" class="page active">
+<div class="hero">
+  <p class="hero-eyebrow">Supply Chain Optimisation · UrbanSpark Logistics GmbH · 2024</p>
+  <h1>From <strong>€482k</strong> to <strong>€378k</strong><br>annual logistics cost.</h1>
+  <p class="hero-sub">End-to-end analysis of a 38-SKU, 47-customer B2B e-bike parts distributor — covering route optimisation, inventory policy redesign, and stockout risk reduction.</p>
+
+  <div class="savings-strip">
+    <div class="saving-cell">
+      <div class="saving-label">distribution savings</div>
+      <div class="saving-value">€101.7k</div>
+      <div class="saving-desc">Route optimisation via Log-Hub Last Mile</div>
+    </div>
+    <div class="saving-cell">
+      <div class="saving-label">inventory savings</div>
+      <div class="saving-value">€1.3k</div>
+      <div class="saving-desc">Policy redesign — holding + ordering cost</div>
+    </div>
+    <div class="saving-cell">
+      <div class="saving-label">stockout reduction</div>
+      <div class="saving-value">−74%</div>
+      <div class="saving-desc">Monte Carlo simulation · 33 → 9 events/year</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <span class="section-title">KPI baseline vs target</span>
+    <span class="section-sub">As-is 2024 → To-be projected</span>
+  </div>
+  <div class="kpi-grid" id="kpi-grid"></div>
+
+  <div class="chart-card">
+    <div class="chart-title">Total annual logistics cost breakdown</div>
+    <div class="chart-desc">As-is vs to-be by cost category (€)</div>
+    <div class="chart-wrap" style="height:300px">
+      <canvas id="costBreakChart" role="img" aria-label="Stacked bar chart comparing total logistics cost components as-is vs to-be">Cost breakdown comparison chart</canvas>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════ ROUTES ═══════════════════════════════ -->
+<div id="page-routes" class="page">
+<div class="section" style="padding-top:2.5rem">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <span class="section-title">Route optimisation</span>
+    <span class="section-sub">Log-Hub Last Mile · round-trip distances</span>
+  </div>
+
+  <div class="route-grid" id="route-grid"></div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div class="chart-card">
+      <div class="chart-title">Distance comparison by route (km)</div>
+      <div class="chart-desc">As-is one-way estimates doubled for round-trip comparison</div>
+      <div class="chart-wrap" style="height:260px">
+        <canvas id="routeDistChart" role="img" aria-label="Bar chart of route distances as-is vs optimised">Route distance comparison</canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Annual cost by route (€)</div>
+      <div class="chart-desc">Same frequency, optimised distances × carrier rates</div>
+      <div class="chart-wrap" style="height:260px">
+        <canvas id="routeCostChart" role="img" aria-label="Bar chart of annual route costs as-is vs to-be">Route cost comparison</canvas>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════ INVENTORY ═══════════════════════════════ -->
+<div id="page-inventory" class="page">
+<div class="section" style="padding-top:2.5rem">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <span class="section-title">Inventory policy redesign</span>
+    <span class="section-sub">38 SKUs · (s,Q) policy · ABC-XYZ segmentation</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem">
+    <div class="chart-card" style="margin-bottom:0">
+      <div class="chart-title">SKUs by ABC-XYZ tier</div>
+      <div class="chart-desc">Revenue × demand variability</div>
+      <div class="chart-wrap" style="height:200px">
+        <canvas id="abcChart" role="img" aria-label="Bar chart of SKU count by ABC-XYZ classification">ABC-XYZ distribution</canvas>
+      </div>
+    </div>
+    <div class="chart-card" style="margin-bottom:0">
+      <div class="chart-title">Safety stock changes</div>
+      <div class="chart-desc">New SS − Old SS per SKU</div>
+      <div class="chart-wrap" style="height:200px">
+        <canvas id="ssChart" role="img" aria-label="Bar chart of safety stock changes per SKU">Safety stock delta</canvas>
+      </div>
+    </div>
+    <div class="chart-card" style="margin-bottom:0">
+      <div class="chart-title">EOQ vs old reorder qty</div>
+      <div class="chart-desc">Wilson formula vs current practice</div>
+      <div class="chart-wrap" style="height:200px">
+        <canvas id="eoqChart" role="img" aria-label="Scatter chart of EOQ vs old reorder quantity">EOQ comparison</canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="inv-controls">
+    <input type="text" id="invSearch" placeholder="Search SKU or product name…" oninput="renderInvTable()">
+    <select id="invFilter" onchange="renderInvTable()">
+      <option value="">All tiers</option>
+      <option value="A">A tier</option>
+      <option value="B">B tier</option>
+      <option value="C">C tier</option>
+    </select>
+    <select id="invSort" onchange="renderInvTable()">
+      <option value="sku">Sort: SKU</option>
+      <option value="delta_ss">Sort: Δ Safety Stock</option>
+      <option value="delta_rop">Sort: Δ ROP</option>
+      <option value="delta_q">Sort: Δ Order Qty</option>
+      <option value="purchase_cost">Sort: Unit Cost ↓</option>
+    </select>
+  </div>
+  <div class="inv-table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>SKU</th><th>Product</th><th>Tier</th>
+          <th>Old SS</th><th>New SS</th><th>Δ SS</th>
+          <th>Old ROP</th><th>New ROP</th><th>Δ ROP</th>
+          <th>Old Q</th><th>EOQ</th><th>Δ Q</th>
+          <th>Lead time</th><th>Unit cost</th>
+        </tr>
+      </thead>
+      <tbody id="inv-tbody"></tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════ SIMULATION ═══════════════════════════════ -->
+<div id="page-simulation" class="page">
+<div class="section" style="padding-top:2.5rem">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <span class="section-title">Stockout risk simulation</span>
+    <span class="section-sub">Monte Carlo · 2,000 trials per SKU · (s,Q) dynamics</span>
+  </div>
+
+  <div class="sim-grid">
+    <div class="sim-stat">
+      <div class="sim-label">observed as-is (2024)</div>
+      <div class="sim-val" style="color:var(--red)">33</div>
+      <div class="sim-sub">stockout events recorded across 38 SKUs</div>
+    </div>
+    <div class="sim-stat">
+      <div class="sim-label">projected to-be</div>
+      <div class="sim-val" style="color:var(--accent)">~9</div>
+      <div class="sim-sub">calibrated projection after policy redesign</div>
+    </div>
+    <div class="sim-stat">
+      <div class="sim-label">simulated as-is</div>
+      <div class="sim-val" style="color:var(--muted2)">19.1</div>
+      <div class="sim-sub">model avg (conservative — no lead-time variability)</div>
+    </div>
+    <div class="sim-stat">
+      <div class="sim-label">relative reduction</div>
+      <div class="sim-val" style="color:var(--accent)">−74%</div>
+      <div class="sim-sub">applied to observed baseline → 33 × 0.26 ≈ 9</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem">
+    <div class="chart-card">
+      <div class="chart-title">SKU-007 — trial distribution (2,000 years)</div>
+      <div class="chart-desc">Bosch Performance Line CX Motor (AZ) · old vs new policy</div>
+      <div class="chart-wrap" style="height:240px">
+        <canvas id="sku7Chart" role="img" aria-label="Bar chart of stockout episode distribution for SKU-007">SKU-007 distribution</canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Top contributing SKUs — episodes/year</div>
+      <div class="chart-desc">SKUs with old-policy rate > 0.3 events/year</div>
+      <div class="chart-wrap" style="height:240px">
+        <canvas id="portSimChart" role="img" aria-label="Horizontal bar chart of stockout episodes per year by SKU">Portfolio simulation results</canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">Why the simulated baseline ≠ observed 33</div>
+    <div class="chart-desc">Two simplifications cause the model to be conservative</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:0.5rem">
+      <div style="border-left:2px solid var(--border2);padding-left:1rem">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-family:var(--mono)">DEMAND UNDERESTIMATION</div>
+        <div style="font-size:13px;color:var(--text)">Bootstrap resampling from only 12 historical months understates tail demand events. More data → better tail estimates.</div>
+      </div>
+      <div style="border-left:2px solid var(--border2);padding-left:1rem">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-family:var(--mono)">LEAD-TIME VARIABILITY IGNORED</div>
+        <div style="font-size:13px;color:var(--text)">The simulation assumes orders always arrive exactly on schedule. Real supplier delays add additional stockout risk not captured here.</div>
+      </div>
+    </div>
+    <div style="margin-top:1.25rem;padding:1rem;background:var(--surface2);border-radius:8px;font-size:13px;color:var(--muted2)">
+      <strong style="color:var(--text)">Calibration approach:</strong> Since both runs (as-is and to-be) share the same simplifications, the <em>relative</em> reduction is more reliable than absolute counts. Applying −74% to the observed baseline of 33 gives the projected KPI15 figure of ~9 events/year.
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const INV    = [{"sku": "SKU-001", "name": "Shimano Deore Rear Derailleur RD-M5120", "abc_xyz": "AY", "lt": 14, "avg": 27.833333333333332, "std": 8.2443736553905, "z": 2.05, "new_ss": 12, "new_rop": 25, "annual": 334, "purchase_cost": 42.5, "eoq": 44, "old_ss": 30, "old_rop": 45, "old_q": 48}, {"sku": "SKU-002", "name": "Shimano Deore Front Derailleur FD-M5100", "abc_xyz": "AY", "lt": 14, "avg": 18, "std": 6.714976477316141, "z": 2.05, "new_ss": 10, "new_rop": 19, "annual": 216, "purchase_cost": 28, "eoq": 43, "old_ss": 14, "old_rop": 23, "old_q": 40}, {"sku": "SKU-003", "name": "SRAM SX Eagle Cassette 11-50T", "abc_xyz": "AY", "lt": 18, "avg": 14.166666666666666, "std": 6.753225940693869, "z": 2.05, "new_ss": 11, "new_rop": 20, "annual": 170, "purchase_cost": 54, "eoq": 28, "old_ss": 10, "old_rop": 20, "old_q": 34}, {"sku": "SKU-004", "name": "KMC X11 Chain 116 Links", "abc_xyz": "AX", "lt": 10, "avg": 42.666666666666664, "std": 10.102504939895164, "z": 2.05, "new_ss": 12, "new_rop": 27, "annual": 512, "purchase_cost": 18.5, "eoq": 82, "old_ss": 23, "old_rop": 38, "old_q": 69}, {"sku": "SKU-005", "name": "Shimano SM-BB71-41B Bottom Bracket", "abc_xyz": "CY", "lt": 14, "avg": 12.5, "std": 3.9427724440366254, "z": 1.28, "new_ss": 4, "new_rop": 10, "annual": 150, "purchase_cost": 22, "eoq": 41, "old_ss": 3, "old_rop": 9, "old_q": 39}, {"sku": "SKU-006", "name": "Bosch PowerTube 500Wh Battery", "abc_xyz": "AY", "lt": 21, "avg": 4.333333333333333, "std": 1.7752507291971888, "z": 2.05, "new_ss": 4, "new_rop": 8, "annual": 52, "purchase_cost": 310, "eoq": 6, "old_ss": 7, "old_rop": 10, "old_q": 15}, {"sku": "SKU-007", "name": "Bosch Performance Line CX Motor", "abc_xyz": "AZ", "lt": 21, "avg": 1.6666666666666667, "std": 1.1547005383792515, "z": 2.05, "new_ss": 2, "new_rop": 4, "annual": 20, "purchase_cost": 580, "eoq": 3, "old_ss": 2, "old_rop": 3, "old_q": 2}, {"sku": "SKU-008", "name": "Shimano STEPS E8000 Display", "abc_xyz": "AY", "lt": 21, "avg": 9.75, "std": 3.0785179433085537, "z": 2.05, "new_ss": 6, "new_rop": 13, "annual": 117, "purchase_cost": 65, "eoq": 21, "old_ss": 7, "old_rop": 14, "old_q": 30}, {"sku": "SKU-009", "name": "Busch & M\u00fcller IQ-X LED Front Light", "abc_xyz": "AY", "lt": 12, "avg": 15.333333333333334, "std": 4.1633319989322635, "z": 2.05, "new_ss": 6, "new_rop": 13, "annual": 184, "purchase_cost": 48, "eoq": 31, "old_ss": 13, "old_rop": 19, "old_q": 24}, {"sku": "SKU-010", "name": "Trelock LS 760 I-Go Rear Light", "abc_xyz": "CY", "lt": 10, "avg": 10.916666666666666, "std": 3.315482505220658, "z": 1.28, "new_ss": 3, "new_rop": 7, "annual": 131, "purchase_cost": 19, "eoq": 41, "old_ss": 3, "old_rop": 7, "old_q": 36}, {"sku": "SKU-011", "name": "Magura MT5 Hydraulic Brake Set", "abc_xyz": "AY", "lt": 16, "avg": 8.166666666666666, "std": 2.443296332763786, "z": 2.05, "new_ss": 4, "new_rop": 9, "annual": 98, "purchase_cost": 95, "eoq": 16, "old_ss": 2, "old_rop": 7, "old_q": 18}, {"sku": "SKU-012", "name": "Tektro HD-M290 Hydraulic Disc Brake", "abc_xyz": "AY", "lt": 12, "avg": 18.833333333333332, "std": 5.201980974648609, "z": 2.05, "new_ss": 7, "new_rop": 15, "annual": 226, "purchase_cost": 38, "eoq": 38, "old_ss": 12, "old_rop": 20, "old_q": 20}, {"sku": "SKU-013", "name": "Shimano RT86 Ice-Tech Disc Rotor 180mm", "abc_xyz": "AX", "lt": 14, "avg": 22.083333333333332, "std": 5.071459057282923, "z": 2.05, "new_ss": 8, "new_rop": 19, "annual": 265, "purchase_cost": 22, "eoq": 54, "old_ss": 22, "old_rop": 33, "old_q": 24}, {"sku": "SKU-014", "name": "Kool-Stop Disc Brake Pads (pair)", "abc_xyz": "AX", "lt": 7, "avg": 58.25, "std": 9.573875438352585, "z": 2.05, "new_ss": 10, "new_rop": 24, "annual": 699, "purchase_cost": 8.5, "eoq": 142, "old_ss": 20, "old_rop": 34, "old_q": 174}, {"sku": "SKU-015", "name": "Schwalbe Smart Sam 29x2.25 Tyre", "abc_xyz": "AY", "lt": 10, "avg": 24.083333333333332, "std": 10.067574713209762, "z": 2.05, "new_ss": 12, "new_rop": 21, "annual": 289, "purchase_cost": 32, "eoq": 47, "old_ss": 5, "old_rop": 14, "old_q": 84}, {"sku": "SKU-016", "name": "Schwalbe Marathon Plus 27.5x2.0 Tyre", "abc_xyz": "AY", "lt": 10, "avg": 20, "std": 8.101627221513196, "z": 2.05, "new_ss": 10, "new_rop": 17, "annual": 240, "purchase_cost": 38, "eoq": 39, "old_ss": 8, "old_rop": 16, "old_q": 69}, {"sku": "SKU-017", "name": "Mavic E-XA Elite Rear Wheel 29\"", "abc_xyz": "AZ", "lt": 18, "avg": 3.6666666666666665, "std": 2.229281716090851, "z": 2.05, "new_ss": 4, "new_rop": 7, "annual": 44, "purchase_cost": 145, "eoq": 9, "old_ss": 1, "old_rop": 3, "old_q": 4}, {"sku": "SKU-018", "name": "DT Swiss XR 1501 Front Wheel 27.5\"", "abc_xyz": "BZ", "lt": 21, "avg": 2.0833333333333335, "std": 1.8319554050414562, "z": 1.65, "new_ss": 3, "new_rop": 5, "annual": 25, "purchase_cost": 175, "eoq": 6, "old_ss": 1, "old_rop": 2, "old_q": 2}, {"sku": "SKU-019", "name": "Slime Puncture Protection Sealant 500ml", "abc_xyz": "BX", "lt": 7, "avg": 59.083333333333336, "std": 8.918401134053042, "z": 1.65, "new_ss": 8, "new_rop": 22, "annual": 709, "purchase_cost": 6, "eoq": 170, "old_ss": 7, "old_rop": 21, "old_q": 93}, {"sku": "SKU-020", "name": "Park Tool IB-3 Multi-Tool", "abc_xyz": "BX", "lt": 7, "avg": 28.25, "std": 4.136863106707347, "z": 1.65, "new_ss": 4, "new_rop": 11, "annual": 339, "purchase_cost": 12, "eoq": 83, "old_ss": 5, "old_rop": 12, "old_q": 29}, {"sku": "SKU-021", "name": "Topeak Ninja Master Bottle Cage", "abc_xyz": "CX", "lt": 7, "avg": 22, "std": 4.390071442781686, "z": 1.28, "new_ss": 3, "new_rop": 9, "annual": 264, "purchase_cost": 7.5, "eoq": 93, "old_ss": 8, "old_rop": 13, "old_q": 46}, {"sku": "SKU-022", "name": "RockShox Recon Silver RL Fork 29\"", "abc_xyz": "AZ", "lt": 25, "avg": 6.333333333333333, "std": 3.3933982252531925, "z": 2.05, "new_ss": 7, "new_rop": 13, "annual": 76, "purchase_cost": 195, "eoq": 10, "old_ss": 4, "old_rop": 9, "old_q": 6}, {"sku": "SKU-023", "name": "Fox Rhythm 34 Fork 27.5\" 130mm", "abc_xyz": "AZ", "lt": 25, "avg": 1.4166666666666667, "std": 1.164500152881315, "z": 2.05, "new_ss": 3, "new_rop": 5, "annual": 17, "purchase_cost": 420, "eoq": 3, "old_ss": 1, "old_rop": 3, "old_q": 6}, {"sku": "SKU-024", "name": "SR Suntour XCR 32 Fork 29\" 100mm", "abc_xyz": "AY", "lt": 18, "avg": 6.916666666666667, "std": 2.9374798516394756, "z": 2.05, "new_ss": 5, "new_rop": 10, "annual": 83, "purchase_cost": 88, "eoq": 15, "old_ss": 10, "old_rop": 15, "old_q": 12}, {"sku": "SKU-025", "name": "Ergon GE1 Evo Grips (pair)", "abc_xyz": "BX", "lt": 7, "avg": 25.416666666666668, "std": 4.1878250665326044, "z": 1.65, "new_ss": 4, "new_rop": 10, "annual": 305, "purchase_cost": 14, "eoq": 73, "old_ss": 12, "old_rop": 18, "old_q": 26}, {"sku": "SKU-026", "name": "Selle Royal Respiro Saddle", "abc_xyz": "BY", "lt": 10, "avg": 12.166666666666666, "std": 3.5632807491088467, "z": 1.65, "new_ss": 4, "new_rop": 9, "annual": 146, "purchase_cost": 29, "eoq": 35, "old_ss": 4, "old_rop": 8, "old_q": 39}, {"sku": "SKU-027", "name": "Ritchey WCS Carbon Handlebar 720mm", "abc_xyz": "AY", "lt": 14, "avg": 6, "std": 2.891995221924885, "z": 2.05, "new_ss": 5, "new_rop": 8, "annual": 72, "purchase_cost": 72, "eoq": 16, "old_ss": 2, "old_rop": 5, "old_q": 14}, {"sku": "SKU-028", "name": "Thomson Elite Seatpost 27.2mm", "abc_xyz": "BY", "lt": 14, "avg": 5, "std": 2.335496832484569, "z": 1.65, "new_ss": 3, "new_rop": 6, "annual": 60, "purchase_cost": 68, "eoq": 15, "old_ss": 1, "old_rop": 4, "old_q": 12}, {"sku": "SKU-029", "name": "Cane Creek 40 Series Headset", "abc_xyz": "BX", "lt": 14, "avg": 8.5, "std": 1.9771421064483223, "z": 1.65, "new_ss": 3, "new_rop": 7, "annual": 102, "purchase_cost": 42, "eoq": 24, "old_ss": 3, "old_rop": 7, "old_q": 18}, {"sku": "SKU-030", "name": "Shimano PD-EF202 Platform Pedals", "abc_xyz": "AX", "lt": 14, "avg": 20.666666666666668, "std": 4.849242365066067, "z": 2.05, "new_ss": 7, "new_rop": 17, "annual": 248, "purchase_cost": 21, "eoq": 54, "old_ss": 15, "old_rop": 25, "old_q": 44}, {"sku": "SKU-031", "name": "Shimano FC-E8000 Chainring 38T", "abc_xyz": "BY", "lt": 14, "avg": 9.75, "std": 2.9886147596868655, "z": 1.65, "new_ss": 4, "new_rop": 9, "annual": 117, "purchase_cost": 34, "eoq": 29, "old_ss": 4, "old_rop": 9, "old_q": 11}, {"sku": "SKU-032", "name": "Lupine SL Nano E-Bike Light 900lm", "abc_xyz": "AY", "lt": 12, "avg": 4.833333333333333, "std": 1.8989630344113093, "z": 2.05, "new_ss": 3, "new_rop": 5, "annual": 58, "purchase_cost": 110, "eoq": 11, "old_ss": 4, "old_rop": 6, "old_q": 18}, {"sku": "SKU-033", "name": "Bosch Intuvia Display Unit", "abc_xyz": "AY", "lt": 21, "avg": 6.5, "std": 2.15322168769582, "z": 2.05, "new_ss": 4, "new_rop": 9, "annual": 78, "purchase_cost": 78, "eoq": 16, "old_ss": 5, "old_rop": 10, "old_q": 21}, {"sku": "SKU-034", "name": "Abus Granit X-Plus 540 Lock", "abc_xyz": "AX", "lt": 7, "avg": 7.5, "std": 1.7320508075688772, "z": 2.05, "new_ss": 2, "new_rop": 4, "annual": 90, "purchase_cost": 68, "eoq": 18, "old_ss": 2, "old_rop": 4, "old_q": 18}, {"sku": "SKU-035", "name": "SKS Germany Fender Set 26\"", "abc_xyz": "CX", "lt": 7, "avg": 14.666666666666666, "std": 2.741377667369365, "z": 1.28, "new_ss": 2, "new_rop": 6, "annual": 176, "purchase_cost": 18, "eoq": 49, "old_ss": 2, "old_rop": 6, "old_q": 48}, {"sku": "SKU-036", "name": "Vaude Trailsaddle Bag 1.0L", "abc_xyz": "CY", "lt": 10, "avg": 10.166666666666666, "std": 3.0698929011029734, "z": 1.28, "new_ss": 3, "new_rop": 7, "annual": 122, "purchase_cost": 22, "eoq": 37, "old_ss": 7, "old_rop": 11, "old_q": 16}, {"sku": "SKU-037", "name": "Shimano GRX BL-RX600 Brake Lever", "abc_xyz": "BY", "lt": 14, "avg": 8.416666666666666, "std": 4.033007750445257, "z": 1.65, "new_ss": 5, "new_rop": 9, "annual": 101, "purchase_cost": 44, "eoq": 24, "old_ss": 7, "old_rop": 12, "old_q": 10}, {"sku": "SKU-038", "name": "Contec Head-Up Street Helmet L", "abc_xyz": "AX", "lt": 10, "avg": 12, "std": 2.593698657761292, "z": 2.05, "new_ss": 4, "new_rop": 8, "annual": 144, "purchase_cost": 35, "eoq": 32, "old_ss": 4, "old_rop": 8, "old_q": 39}];
+const ROUTES = [{"id": "R-01", "name": "Munich Inner Ring (MUC_1)", "zone": "MUC (N&W)", "stops": 8, "opt_dist": 27.28, "delta_dist": 96.72, "opt_dur": 0.67, "delta_dur": 4.93, "freq": 3, "cost_run": 65.1992, "cost_km": 2.39, "delta_cpr": 231.1608, "vehicle": "Sprinter 3.5t", "annual": 10171.0752, "asis_annual": 46232.16, "asis_dist": 124, "asis_dur": 5.6}, {"id": "R-02", "name": "Munich Outer Ring (MUC_2)", "zone": "MUC (S&E)", "stops": 9, "opt_dist": 54.51, "delta_dist": 141.49, "opt_dur": 1.28, "delta_dur": 5.72, "freq": 3, "cost_run": 99.2082, "cost_km": 1.82, "delta_cpr": 257.5118, "vehicle": "Sprinter 3.5t", "annual": 15476.4792, "asis_annual": 55648.32, "asis_dist": 196, "asis_dur": 7.0}, {"id": "R-03", "name": "Stuttgart Run (STR)", "zone": "STR", "stops": 10, "opt_dist": 493.36, "delta_dist": 134.64, "opt_dur": 7.55, "delta_dur": 5.45, "freq": 1, "cost_run": 616.7, "cost_km": 1.25, "delta_cpr": 168.29999999999995, "vehicle": "DPD 3PL Sprinter", "annual": 33004.4, "asis_annual": 41756.0, "asis_dist": 628, "asis_dur": 13.0}, {"id": "R-04", "name": "Nuremberg Run (NUE)", "zone": "NUE", "stops": 9, "opt_dist": 435.44, "delta_dist": 4.560000000000002, "opt_dur": 6.64, "delta_dur": 2.96, "freq": 1, "cost_run": 544.3, "cost_km": 1.25, "delta_cpr": 5.7000000000000455, "vehicle": "DPD 3PL Sprinter", "annual": 29239.6, "asis_annual": 29536.0, "asis_dist": 440, "asis_dur": 9.6}, {"id": "R-05", "name": "Frankfurt Run (FRA)", "zone": "FRA", "stops": 9, "opt_dist": 831.04, "delta_dist": -11.039999999999964, "opt_dur": 11.65, "delta_dur": 2.75, "freq": 1, "cost_run": 1038.8, "cost_km": 1.25, "delta_cpr": -13.799999999999955, "vehicle": "DPD 3PL Sprinter", "annual": 54953.6, "asis_annual": 54236.0, "asis_dist": 820, "asis_dur": 14.4}, {"id": "R-06", "name": "Augsburg Run (AUG)", "zone": "AUG", "stops": 8, "opt_dist": 178.59, "delta_dist": 117.41, "opt_dur": 2.96, "delta_dur": 3.4400000000000004, "freq": 2, "cost_run": 223.2375, "cost_km": 1.25, "delta_cpr": 146.7625, "vehicle": "DPD 3PL Sprinter", "annual": 25088.7, "asis_annual": 42224.0, "asis_dist": 296, "asis_dur": 6.4}];
+const KPIS   = [{"id": 1, "name": "Total Inbound", "asis": 4836, "tobe": 4836, "unit": "\u20ac / year"}, {"id": 2, "name": "Total Distribution", "asis": 269632.48, "tobe": 167933.8544, "unit": "\u20ac / year"}, {"id": 3, "name": "Total Emergency / Express Costs", "asis": 5160, "tobe": 5160, "unit": "\u20ac / year"}, {"id": 4, "name": "TOTAL Annual Transport Cost", "asis": 279628.48, "tobe": 177929.8544, "unit": "\u20ac / year"}, {"id": 5, "name": "Average Route Distance", "asis": 417.3333333333333, "tobe": 336.7033333333333, "unit": "km / route"}, {"id": 6, "name": "Average Route Duration", "asis": 9.333333333333334, "tobe": 5.125, "unit": "hrs / route"}, {"id": 7, "name": "Total Weekly Distance", "asis": 3440, "tobe": 2362.39, "unit": "km / week"}, {"id": 8, "name": "TOTAL Annual Distance (all routes)", "asis": 178880, "tobe": 122844.28, "unit": "km / year"}, {"id": 9, "name": "Total Tied Capital (Stock Value at Purchase Cost)", "asis": 37505.75, "tobe": 36709.25, "unit": "\u20ac"}, {"id": 10, "name": "Annual Inventory Holding Cost", "asis": 6751.035, "tobe": 6607.665, "unit": "\u20ac / year"}, {"id": 11, "name": "Annual Warehouse Storage Cost", "asis": 188700, "tobe": 188700, "unit": "\u20ac / year"}, {"id": 12, "name": "Estimated Annual Ordering Cost", "asis": 5852, "tobe": 4664, "unit": "\u20ac / year"}, {"id": 13, "name": "Inventory Turnover Ratio", "asis": 6.728501629750105, "tobe": 6.874493485974243, "unit": "x / year"}, {"id": 14, "name": "Day Sales of Inventory (DSI)", "asis": 54.246847230615295, "tobe": 53.094820839483674, "unit": "days"}, {"id": 15, "name": "Stockout Frequency", "asis": 33, "tobe": 9, "unit": "events / year"}, {"id": 16, "name": "SKUs affected by at least one stockout ", "asis": 16, "tobe": null, "unit": "SKUs"}, {"id": 17, "name": "Total Emergency Order Cost", "asis": 1327.13, "tobe": 361.94454545454545, "unit": "\u20ac / year"}, {"id": 18, "name": "Total Annual Logistics Cost", "asis": 482258.64499999996, "tobe": 378263.4639454545, "unit": "\u20ac / year"}];
+
+function fmt(v, dec=0) {
+  if (v == null) return '—';
+  return Number(v).toLocaleString('de-DE', {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+function fmtEur(v) {
+  if (v == null) return '—';
+  return '€' + fmt(v);
+}
+function delta(a, b, inv=false) {
+  if (a == null || b == null) return '';
+  const d = b - a;
+  const good = inv ? d > 0 : d < 0;
+  const sign = d > 0 ? '+' : '';
+  return `<span class="${good ? 'delta-pos' : (d===0?'':'delta-neg')}">${sign}${fmt(d,1)}</span>`;
+}
+
+/* ── PAGE SWITCH ── */
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-links button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if(btn) btn.classList.add('active');
+}
+
+/* ── KPI GRID ── */
+function buildKpiGrid() {
+  const grid = document.getElementById('kpi-grid');
+  const skip = [5,6,7,8];
+  KPIS.forEach(k => {
+    if(skip.includes(k.id)) return;
+    const asis = k.asis != null ? Number(k.asis) : null;
+    const tobe = k.tobe != null ? Number(k.tobe) : null;
+    const diff = (asis && tobe) ? tobe - asis : null;
+    const pct  = (asis && diff) ? (diff/Math.abs(asis)*100) : null;
+    const isEur = k.unit && k.unit.includes('€');
+    const fmtV  = v => v == null ? '—' : (isEur ? fmtEur(v) : fmt(v,1));
+    let dClass = '', dText = '';
+    if(diff !== null) {
+      const good = diff < 0;
+      dClass = good ? 'pos' : (diff===0 ? '' : 'neg');
+      dText  = (diff>0?'+':'') + fmt(diff, isEur?0:1) + (pct!=null ? ` (${pct>0?'+':''}${fmt(pct,1)}%)` : '');
+    }
+    grid.insertAdjacentHTML('beforeend', `
+      <div class="kpi-card">
+        <div class="kpi-name">${k.name}</div>
+        <div class="kpi-row">
+          <span class="kpi-asis">${fmtV(asis)}</span>
+          <span class="kpi-arrow">→</span>
+          <span class="kpi-tobe">${fmtV(tobe)}</span>
+        </div>
+        ${diff!==null ? `<div class="kpi-delta ${dClass}">${dText}</div>` : ''}
+        <div class="kpi-unit">${k.unit}</div>
+      </div>`);
+  });
+}
+
+/* ── COST BREAKDOWN CHART ── */
+function buildCostBreak() {
+  const ctx = document.getElementById('costBreakChart');
+  const COLS = {
+    transport: ['#4ab4f0','#2a7ab0'],
+    holding:   ['#f0a832','#b07820'],
+    storage:   ['#888','#555'],
+    ordering:  ['#c8f04a','#88b030'],
+    emergency: ['#f05252','#b03030'],
+  };
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['As-is 2024', 'To-be projected'],
+      datasets: [
+        {label:'Distribution', data:[269632,167934], backgroundColor:[COLS.transport[0],COLS.transport[1]]},
+        {label:'Inbound + Express', data:[10000, 10000], backgroundColor:[COLS.emergency[0],COLS.emergency[1]]},
+        {label:'Holding', data:[6751,6608], backgroundColor:[COLS.holding[0],COLS.holding[1]]},
+        {label:'Storage', data:[188700,188700], backgroundColor:[COLS.storage[0],COLS.storage[1]]},
+        {label:'Ordering', data:[5852,4664], backgroundColor:[COLS.ordering[0],COLS.ordering[1]]},
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color:'#888', font:{size:11} } } },
+      scales: {
+        x: { stacked:true, ticks:{color:'#666'}, grid:{color:'#222'} },
+        y: { stacked:true, ticks:{color:'#666', callback: v=>'€'+Math.round(v/1000)+'k'}, grid:{color:'#222'} }
+      }
+    }
+  });
+}
+
+/* ── ROUTE CARDS ── */
+function buildRouteCards() {
+  const grid = document.getElementById('route-grid');
+  ROUTES.forEach(r => {
+    const asisAnn = r.asis_annual != null ? Number(r.asis_annual) : null;
+    const tobeAnn = r.annual     != null ? Number(r.annual)      : null;
+    const annDiff = (asisAnn && tobeAnn) ? tobeAnn - asisAnn : null;
+    const isFleet = r.vehicle && r.vehicle.includes('Sprinter 3.5');
+    const badge   = isFleet
+      ? `<span class="route-badge badge-fleet">Own fleet</span>`
+      : `<span class="route-badge badge-dpd">DPD 3PL</span>`;
+
+    const mRow = (label, asis, tobe, unit, lowerBetter=true) => {
+      const d = (asis!=null&&tobe!=null) ? tobe-asis : null;
+      const good = d!=null && (lowerBetter ? d<0 : d>0);
+      const dc = good?'delta-pos':(d===0||d==null?'':'delta-neg');
+      return `<div class="route-metric">
+        <div class="rm-label">${label}</div>
+        <div class="rm-asis">${asis!=null?asis:'—'} → <span class="rm-tobe">${tobe!=null?tobe:'—'}</span> <span class="rm-delta ${dc}">${d!=null?(d>0?'+':'')+Number(d).toFixed(1):''} ${unit}</span></div>
+      </div>`;
+    };
+
+    grid.insertAdjacentHTML('beforeend', `
+      <div class="route-card">
+        <div class="route-head">
+          <div>
+            <div class="route-id">${r.id}</div>
+            <div class="route-name">${r.name}</div>
+          </div>
+          ${badge}
+        </div>
+        <div class="route-metrics">
+          ${mRow('Distance', r.asis_dist, r.opt_dist, 'km')}
+          ${mRow('Duration', r.asis_dur, r.opt_dur, 'hr')}
+          ${mRow('Annual cost', asisAnn!=null?'€'+Math.round(asisAnn):null, tobeAnn!=null?'€'+Math.round(tobeAnn):null, '')}
+          ${mRow('Freq/week', null, r.freq, 'x/wk', false)}
+        </div>
+      </div>`);
+  });
+}
+
+/* ── ROUTE CHARTS ── */
+function buildRouteCharts() {
+  const labels = ROUTES.map(r=>r.id);
+  const asisD  = ROUTES.map(r=>r.asis_dist||0);
+  const tobeD  = ROUTES.map(r=>Number(r.opt_dist)||0);
+  const asisC  = ROUTES.map(r=>r.asis_annual||0);
+  const tobeC  = ROUTES.map(r=>Number(r.annual)||0);
+
+  const baseOpts = (yFmt) => ({
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ labels:{ color:'#888', font:{size:11} } } },
+    scales:{
+      x:{ ticks:{color:'#666',font:{size:11}}, grid:{color:'#222'} },
+      y:{ ticks:{color:'#666', callback: yFmt}, grid:{color:'#222'} }
+    }
+  });
+
+  new Chart(document.getElementById('routeDistChart'), {
+    type:'bar',
+    data:{ labels, datasets:[
+      {label:'As-is (km)', data:asisD, backgroundColor:'rgba(102,102,102,0.5)', borderColor:'#555', borderWidth:1},
+      {label:'Optimised (km)', data:tobeD, backgroundColor:'rgba(200,240,74,0.5)', borderColor:'#c8f04a', borderWidth:1},
+    ]},
+    options: baseOpts(v=>v+'km')
+  });
+
+  new Chart(document.getElementById('routeCostChart'), {
+    type:'bar',
+    data:{ labels, datasets:[
+      {label:'As-is (€)', data:asisC, backgroundColor:'rgba(102,102,102,0.5)', borderColor:'#555', borderWidth:1},
+      {label:'To-be (€)', data:tobeC, backgroundColor:'rgba(200,240,74,0.5)', borderColor:'#c8f04a', borderWidth:1},
+    ]},
+    options: baseOpts(v=>'€'+Math.round(v/1000)+'k')
+  });
+}
+
+/* ── INV TABLE ── */
+function renderInvTable() {
+  const q   = document.getElementById('invSearch').value.toLowerCase();
+  const tier= document.getElementById('invFilter').value;
+  const srt = document.getElementById('invSort').value;
+
+  let data = INV.filter(i => {
+    if(tier && !i.abc_xyz.startsWith(tier)) return false;
+    if(q && !i.sku.toLowerCase().includes(q) && !i.name.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  if(srt==='delta_ss')  data.sort((a,b)=>(b.new_ss-b.old_ss)-(a.new_ss-a.old_ss));
+  if(srt==='delta_rop') data.sort((a,b)=>(b.new_rop-b.old_rop)-(a.new_rop-a.old_rop));
+  if(srt==='delta_q')   data.sort((a,b)=>(b.eoq-b.old_q)-(a.eoq-a.old_q));
+  if(srt==='purchase_cost') data.sort((a,b)=>b.purchase_cost-a.purchase_cost);
+
+  const tbody = document.getElementById('inv-tbody');
+  tbody.innerHTML = data.map(i => {
+    const dSS  = i.new_ss  - i.old_ss;
+    const dROP = i.new_rop - i.old_rop;
+    const dQ   = i.eoq     - i.old_q;
+    const tClass = i.abc_xyz[0]==='A' ? 'tier-A' : i.abc_xyz[0]==='B' ? 'tier-B' : 'tier-C';
+    const dFmt = (d) => d===0 ? `<span style="color:#555">0</span>` : d>0
+      ? `<span class="delta-pos mono">+${d}</span>`
+      : `<span class="delta-neg mono">${d}</span>`;
+    return `<tr>
+      <td class="mono" style="color:var(--muted2)">${i.sku}</td>
+      <td style="max-width:180px">${i.name}</td>
+      <td><span class="abc-badge ${tClass}">${i.abc_xyz}</span></td>
+      <td class="mono" style="color:var(--muted2)">${i.old_ss}</td>
+      <td class="mono">${i.new_ss}</td>
+      <td>${dFmt(dSS)}</td>
+      <td class="mono" style="color:var(--muted2)">${i.old_rop}</td>
+      <td class="mono">${i.new_rop}</td>
+      <td>${dFmt(dROP)}</td>
+      <td class="mono" style="color:var(--muted2)">${i.old_q}</td>
+      <td class="mono">${i.eoq}</td>
+      <td>${dFmt(dQ)}</td>
+      <td class="mono">${i.lt}d</td>
+      <td class="mono">€${i.purchase_cost}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── INV CHARTS ── */
+function buildInvCharts() {
+  const abcCounts = {};
+  INV.forEach(i => { abcCounts[i.abc_xyz] = (abcCounts[i.abc_xyz]||0)+1; });
+  const abcLabels = Object.keys(abcCounts).sort();
+  const abcColors = abcLabels.map(l => l[0]==='A'?'rgba(200,240,74,0.6)':l[0]==='B'?'rgba(74,180,240,0.6)':'rgba(102,102,102,0.4)');
+
+  new Chart(document.getElementById('abcChart'), {
+    type:'bar',
+    data:{ labels:abcLabels, datasets:[{data:abcLabels.map(l=>abcCounts[l]), backgroundColor:abcColors, borderWidth:0}] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ticks:{color:'#666',font:{size:11}},grid:{color:'#222'}}, y:{ticks:{color:'#666',stepSize:1},grid:{color:'#222'}} }
+    }
+  });
+
+  const ssDeltas = INV.map(i=>i.new_ss - i.old_ss);
+  new Chart(document.getElementById('ssChart'), {
+    type:'bar',
+    data:{ labels:INV.map(i=>i.sku), datasets:[{
+      data:ssDeltas,
+      backgroundColor: ssDeltas.map(d=>d>0?'rgba(200,240,74,0.6)':d<0?'rgba(240,82,82,0.6)':'rgba(102,102,102,0.3)'),
+      borderWidth:0
+    }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ticks:{display:false},grid:{color:'#222'}}, y:{ticks:{color:'#666',stepSize:1},grid:{color:'#222'}} }
+    }
+  });
+
+  new Chart(document.getElementById('eoqChart'), {
+    type:'scatter',
+    data:{ datasets:[{
+      label:'SKUs',
+      data: INV.map(i=>({x:i.old_q, y:i.eoq, label:i.sku})),
+      backgroundColor:'rgba(200,240,74,0.5)',
+      borderColor:'rgba(200,240,74,0.8)',
+      pointRadius:5
+    },{
+      label:'No change line',
+      data:[{x:0,y:0},{x:200,y:200}],
+      type:'line', borderColor:'rgba(102,102,102,0.3)', borderDash:[4,4], pointRadius:0, borderWidth:1
+    }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{
+        x:{title:{display:true,text:'Old order qty',color:'#666',font:{size:11}},ticks:{color:'#666'},grid:{color:'#222'}},
+        y:{title:{display:true,text:'EOQ (new)',color:'#666',font:{size:11}},ticks:{color:'#666'},grid:{color:'#222'}}
+      }
+    }
+  });
+}
+
+/* ── SIMULATION CHARTS ── */
+function buildSimCharts() {
+  new Chart(document.getElementById('sku7Chart'), {
+    type:'bar',
+    data:{
+      labels:['0','1','2','3','4','5+'],
+      datasets:[
+        {label:'Old (ROP=3,Q=2)', data:[51,19.7,12.2,7.7,4.2,5.2], backgroundColor:'rgba(240,82,82,0.5)', borderColor:'#f05252', borderWidth:1},
+        {label:'New (ROP=4,Q=3)', data:[83.1,10.1,4.7,1.2,0.6,0.3], backgroundColor:'rgba(200,240,74,0.5)', borderColor:'#c8f04a', borderWidth:1},
+      ]
+    },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{color:'#888',font:{size:11}}} },
+      scales:{
+        x:{title:{display:true,text:'stockout episodes/year',color:'#666',font:{size:11}},ticks:{color:'#666'},grid:{color:'#222'}},
+        y:{title:{display:true,text:'% of trials',color:'#666',font:{size:11}},ticks:{color:'#666',callback:v=>v+'%'},grid:{color:'#222'}}
+      }
+    }
+  });
+
+  const portSkus = ['SKU-018','SKU-022','SKU-017','SKU-007','SKU-028','SKU-027','SKU-011','SKU-031','SKU-005'];
+  const portOld  = [4.34,4.02,3.88,1.12,0.95,0.74,0.72,0.38,0.56];
+  const portNew  = [0.23,0.28,0.08,0.25,0.17,0.04,0.20,0.14,0.34];
+  new Chart(document.getElementById('portSimChart'), {
+    type:'bar', indexAxis:'y',
+    data:{ labels:portSkus, datasets:[
+      {label:'Old policy', data:portOld, backgroundColor:'rgba(240,82,82,0.5)', borderColor:'#f05252', borderWidth:1},
+      {label:'New policy', data:portNew, backgroundColor:'rgba(200,240,74,0.5)', borderColor:'#c8f04a', borderWidth:1},
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{color:'#888',font:{size:11}}} },
+      scales:{
+        x:{title:{display:true,text:'episodes/year',color:'#666',font:{size:11}},ticks:{color:'#666'},grid:{color:'#222'}},
+        y:{ticks:{color:'#888',font:{size:11}},grid:{color:'#222'}}
+      }
+    }
+  });
+}
+
+/* ── INIT ── */
+buildKpiGrid();
+buildCostBreak();
+buildRouteCards();
+buildRouteCharts();
+buildInvCharts();
+renderInvTable();
+buildSimCharts();
+</script>
+</body>
+</html>
