@@ -31,7 +31,7 @@ distributor of premium e-bike components, based in Munich, Germany.
 |---|---|
 | `index.html` | Interactive analytics dashboard (live on GitHub Pages) |
 | `UrbanSpark_RawData.xlsx` | Full Excel workbook — data model, ABC-XYZ, route optimisation, inventory policy, KPI sheet |
-| `UrbanSpark_Report_Updated.pdf` | Full project report covering methodology, results, limitations and recommendations |
+| `UrbanSpark_Supply_Chain_Report.pdf` | Full project report covering methodology, results, limitations and recommendations |
 | `simulation.py` | Monte Carlo stockout simulation — runs automatically from the Excel workbook |
 | `extract_data.py` | Data extraction script — reads policy parameters and demand history from Excel |
 | `all_new_routes - View.png` | Log-Hub output — optimised routes across all 5 zones |
